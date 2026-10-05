@@ -6,9 +6,25 @@ VRoidDiva converts a VRoid Studio model (`.vrm`, VRM 0.x or 1.0) into a
 can pick on the module select screen. Your model then dances in every song with the
 game's own motions.
 
-```
-VRoidDiva convert MyCharacter.vrm --reference diva_main.cpk --out "mods/My Character"
-```
+## Quick start (no command line needed)
+
+1. Install [DIVA Mod Loader](https://github.com/blueskythlikesclouds/DivaModLoader/releases)
+   into the game folder, if you haven't already.
+2. Download **VRoidDiva.exe** from this repository's
+   [Releases page](../../releases/tag/latest) and double-click it.
+   Windows may warn about an unrecognised app: choose *More info → Run anyway*.
+3. Click **Browse…** next to *VRoid model* and pick your `.vrm` file (or drag the
+   file onto the window).
+4. Check the *Game folder*. It is found automatically for normal Steam installs;
+   otherwise click **Browse…** and pick the folder containing `DivaMegaMix.exe`
+   (in Steam: right-click the game → *Manage → Browse local files*).
+5. Type a module name, pick the character, and press **Convert**.
+6. Start the game and choose the new module on that character's module select screen.
+
+The app writes the mod straight into the game's `mods` folder and reads the game's
+own `diva_main.cpk` for the skeleton, so there is nothing else to set up.
+`VRoidDivaCli.exe` on the same page is the command-line version described under
+[Usage](#usage-command-line).
 
 > **Status:** the converter is fully tested against the file formats (every output
 > file is read back with MikuMikuLibrary, and real VRoid/VRM sample models are
@@ -50,7 +66,8 @@ body shows through.
   installed (or a mod manager that installs it).
 - A VRoid model exported as `.vrm` (VRoid Studio: *Export → Export as VRM*).
 - To build from source: the [.NET 8 SDK](https://dotnet.microsoft.com/download).
-  The tool runs on Windows, Linux (including Steam Deck) and macOS.
+  The window app is Windows-only; the command-line version also runs on Linux
+  (including Steam Deck) and macOS.
 
 ## Building
 
@@ -60,17 +77,22 @@ cd DivaModTest
 dotnet build -c Release
 ```
 
-Run it with `dotnet run --project src/VRoidDiva -- <arguments>`. To get a single
-Windows executable:
+Run the command-line version with `dotnet run --project src/VRoidDiva -- <arguments>`.
+To get single Windows executables (`VRoidDiva.exe` is the window app,
+`VRoidDivaCli.exe` the command-line version):
 
 ```sh
+dotnet publish src/VRoidDiva.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 dotnet publish src/VRoidDiva -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
-The CI workflow (`.github/workflows/ci.yml`) also uploads `VRoidDiva.exe` as a
-build artifact.
+The CI workflow (`.github/workflows/ci.yml`) builds both on every push and
+publishes them on the [Releases page](../../releases/tag/latest).
 
-## Usage
+## Usage (command line)
+
+The examples call the command-line version `VRoidDiva`; the downloaded file is
+named `VRoidDivaCli.exe`.
 
 ### 1. Point it at the game's skeleton
 
@@ -222,6 +244,9 @@ the reference, and that the tables and databases agree with each other.
 
 Project layout:
 
+- `src/VRoidDiva.App`: the Windows window app (`VRoidDiva.exe`)
+- `src/VRoidDiva`: the converter and the command-line version (`VRoidDivaCli.exe`);
+  `Converter.cs` runs the whole pipeline, `GameLocator.cs` finds the game
 - `src/VRoidDiva/Vrm`: glTF/VRM reader
 - `src/VRoidDiva/Retarget`: bone map and the fitting onto the DIVA skeleton
 - `src/VRoidDiva/Diva`: reference skeleton loader, object/texture builders, module

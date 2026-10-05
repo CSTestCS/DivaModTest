@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,10 +18,29 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - run: dotnet test VRoidDiva.sln -c Release
-      - run: >
-          dotnet publish src/VRoidDiva/VRoidDiva.csproj -c Release -r win-x64 --self-contained
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/win-x64
+
+      - name: Publish Windows executables
+        run: |
+          for project in src/VRoidDiva.App src/VRoidDiva; do
+            dotnet publish "$project" -c Release -r win-x64 --self-contained \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
+          done
+
       - uses: actions/upload-artifact@v4
         with:
           name: VRoidDiva-win-x64
-          path: publish/win-x64/VRoidDiva.exe
+          path: |
+            publish/VRoidDiva.exe
+            publish/VRoidDivaCli.exe
+
+      # Every push to a branch refreshes the "latest" download on the Releases page.
+      - name: Update the "latest" release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest publish/VRoidDiva.exe publish/VRoidDivaCli.exe \
+            --target "$GITHUB_SHA" --prerelease --title "VRoidDiva (latest build)" \
+            --notes "Download **VRoidDiva.exe** and double-click it. Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}. VRoidDivaCli.exe is the command-line version."
