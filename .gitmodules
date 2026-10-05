@@ -1,0 +1,3 @@
+[submodule "external/MikuMikuLibrary"]
+	path = external/MikuMikuLibrary
+	url = https://github.com/blueskythlikesclouds/MikuMikuLibrary
